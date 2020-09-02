@@ -1,0 +1,36 @@
+- hosts: all
+  become: yes
+  user: ubuntu
+  gather_facts: no
+  pre_tasks:
+    - name: update repositories
+      apt:
+        update_cache: yes
+  tasks:
+    - name: install varnish
+      apt:
+        name: varnish
+        state: present
+
+    - name: copy vcl file with wordpress configuration
+      copy:
+        src: files/default.vcl
+        dest: /etc/varnish/default.vcl
+
+    - name: copy varnish service file
+      copy:
+        remote_src: yes
+        src: /lib/systemd/system/varnish.service
+        dest: /etc/systemd/system/
+
+    - name: configure varnish to listen on port 80
+      replace:
+        path: /etc/systemd/system/varnish.service
+        regexp: "6081"
+        replace: "80"
+
+    - name: ensure varnish services are started and enabled on startup
+      service:
+        name: varnish
+        state: started
+        enabled: true
